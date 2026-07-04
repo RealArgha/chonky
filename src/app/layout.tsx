@@ -1,9 +1,10 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist_Mono, Press_Start_2P } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const pixelFont = Press_Start_2P({
+  variable: "--font-pixel",
+  weight: "400",
   subsets: ["latin"],
 });
 
@@ -13,12 +14,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Chonki",
-  description: "Your pet capybara. Feed, sleep, bath, and play with Chonki.",
+  title: "Chonky",
+  description: "Your pet capybara. Feed, sleep, bath, and play with Chonky.",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Chonki",
+    title: "Chonky",
   },
 };
 
@@ -26,7 +27,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
-  themeColor: "#fef3c7",
+  themeColor: "#cc0000",
 };
 
 export default function RootLayout({
@@ -37,9 +38,11 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${pixelFont.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-amber-50 dark:bg-stone-900">{children}</body>
+      <body className="min-h-full flex flex-col bg-gradient-to-b from-red-600 via-red-700 to-red-900">
+        {children}
+      </body>
     </html>
   );
 }

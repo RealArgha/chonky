@@ -8,7 +8,7 @@ import {
   applyDecay,
   INITIAL_STATS,
   Stats,
-} from "@/lib/chonki";
+} from "@/lib/chonky";
 
 const STORAGE_KEY = "chonki-state-v1";
 const TICK_MS = 1000;
@@ -50,7 +50,7 @@ function useHasMounted(): boolean {
   return useSyncExternalStore(noopSubscribe, () => true, () => false);
 }
 
-export function useChonki() {
+export function useChonky() {
   const ready = useHasMounted();
   const [stats, setStats] = useState<Stats>(initialStats);
   const [actionPlaying, setActionPlaying] = useState<ActionKey | null>(null);

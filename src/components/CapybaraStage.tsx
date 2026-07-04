@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ActionKey } from "@/lib/chonki";
+import { ActionKey } from "@/lib/chonky";
 
 const ACTION_GIF: Record<ActionKey, string> = {
   eat: "/gifs/eat.gif",
@@ -28,11 +28,12 @@ export function CapybaraStage({
   }
 
   return (
-    <div className="flex aspect-square w-full max-w-xs items-center justify-center overflow-hidden rounded-3xl bg-amber-100 dark:bg-stone-800">
+    <div className="relative flex aspect-square w-full max-w-xs items-center justify-center overflow-hidden rounded-2xl border-[3px] border-slate-900 bg-[#9bbc0f] shadow-[inset_0_0_0_3px_#0f172a]">
+      <div className="pointer-events-none absolute inset-0 bg-[repeating-linear-gradient(0deg,rgba(0,0,0,0.06)_0px,rgba(0,0,0,0.06)_1px,transparent_1px,transparent_3px)]" />
       {errored ? (
-        <div className="flex flex-col items-center gap-2 p-4 text-center text-stone-500 dark:text-stone-400">
+        <div className="relative flex flex-col items-center gap-2 p-4 text-center text-slate-800">
           <span className="text-6xl">🦫</span>
-          <span className="text-xs">
+          <span className="font-pixel text-[9px] leading-relaxed">
             Drop <code className="font-mono">{src.replace("/gifs/", "")}</code> in{" "}
             <code className="font-mono">public/gifs/</code>
           </span>
@@ -42,8 +43,8 @@ export function CapybaraStage({
         <img
           key={src}
           src={src}
-          alt={actionPlaying ? `Chonki ${actionPlaying}` : sad ? "Chonki is sad" : "Chonki is happy"}
-          className="h-full w-full object-contain"
+          alt={actionPlaying ? `Chonky ${actionPlaying}` : sad ? "Chonky is sad" : "Chonky is happy"}
+          className="relative h-full w-full object-contain"
           onError={() => setErrored(true)}
         />
       )}

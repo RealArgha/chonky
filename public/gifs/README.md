@@ -1,4 +1,4 @@
-# Chonki gif assets
+# Chonky gif assets
 
 Drop your capybara gifs here using these exact filenames. The app falls back to a 🦫 placeholder for any file that's missing, so you can add them one at a time.
 
