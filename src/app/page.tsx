@@ -37,7 +37,7 @@ export default function Home() {
           ))}
         </div>
 
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 gap-3">
           {ACTIONS.map((action) => (
             <ActionButton
               key={action}
