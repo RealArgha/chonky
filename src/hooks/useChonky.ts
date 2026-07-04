@@ -96,7 +96,7 @@ export function useChonky() {
       setStats((prev) => applyAction(prev, action));
       animationTimeoutRef.current = setTimeout(() => {
         setActionPlaying(null);
-      }, ACTION_ANIMATION_MS);
+      }, ACTION_ANIMATION_MS[action]);
       return action;
     });
   }, []);

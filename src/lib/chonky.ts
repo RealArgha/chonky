@@ -42,7 +42,12 @@ export const DECAY_PER_MINUTE: Record<StatKey, number> = {
 
 // How much an action refills its stat, and how long its gif plays.
 export const ACTION_BOOST = 40;
-export const ACTION_ANIMATION_MS = 2500;
+export const ACTION_ANIMATION_MS: Record<ActionKey, number> = {
+  eat: 10_000,
+  sleep: 120_000,
+  bath: 10_000,
+  play: 10_000,
+};
 
 export const SAD_THRESHOLD = 20;
 
