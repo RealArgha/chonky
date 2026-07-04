@@ -18,13 +18,13 @@ export default function Home() {
 
   return (
     <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center px-4 py-8">
-      <h1 className="mb-4 text-center font-pixel text-2xl tracking-wide text-white [text-shadow:3px_3px_0_#7f1d1d]">
+      <h1 className="mb-4 text-center font-pixel text-2xl tracking-wide text-amber-800 [text-shadow:3px_3px_0_#ffffff]">
         Chonky
       </h1>
 
       <div className="flex flex-col gap-5 rounded-3xl border-[3px] border-slate-900 bg-slate-100 p-4 shadow-[0_6px_0_0_#0f172a]">
         {sad && (
-          <p className="rounded-lg border-2 border-slate-900 bg-yellow-300 px-2 py-1 text-center font-pixel text-[9px] text-slate-900">
+          <p className="rounded-lg border-2 border-slate-900 bg-amber-200 px-2 py-1 text-center font-pixel text-[9px] text-slate-900">
             Chonky&apos;s {STAT_LABELS[worst.key].toLowerCase()} is low!
           </p>
         )}

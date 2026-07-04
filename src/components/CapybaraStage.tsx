@@ -28,8 +28,8 @@ export function CapybaraStage({
   }
 
   return (
-    <div className="relative flex aspect-square w-full max-w-xs items-center justify-center overflow-hidden rounded-2xl border-[3px] border-slate-900 bg-[#9bbc0f] shadow-[inset_0_0_0_3px_#0f172a]">
-      <div className="pointer-events-none absolute inset-0 bg-[repeating-linear-gradient(0deg,rgba(0,0,0,0.06)_0px,rgba(0,0,0,0.06)_1px,transparent_1px,transparent_3px)]" />
+    <div className="relative flex aspect-square w-full max-w-xs items-center justify-center overflow-hidden rounded-2xl border-[3px] border-slate-900 bg-[#dff5e1]">
+      <div className="pointer-events-none absolute inset-0 bg-[repeating-linear-gradient(0deg,rgba(0,0,0,0.04)_0px,rgba(0,0,0,0.04)_1px,transparent_1px,transparent_3px)]" />
       {errored ? (
         <div className="relative flex flex-col items-center gap-2 p-4 text-center text-slate-800">
           <span className="text-6xl">🦫</span>

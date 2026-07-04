@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist_Mono, Press_Start_2P } from "next/font/google";
+import { PixelClouds } from "@/components/PixelClouds";
 import "./globals.css";
 
 const pixelFont = Press_Start_2P({
@@ -27,7 +28,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
-  themeColor: "#cc0000",
+  themeColor: "#bfe7ff",
 };
 
 export default function RootLayout({
@@ -40,7 +41,8 @@ export default function RootLayout({
       lang="en"
       className={`${pixelFont.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-gradient-to-b from-red-600 via-red-700 to-red-900">
+      <body className="min-h-full flex flex-col">
+        <PixelClouds />
         {children}
       </body>
     </html>
