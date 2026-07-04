@@ -28,7 +28,7 @@ export function CapybaraStage({
   }
 
   return (
-    <div className="relative flex aspect-square w-full max-w-xs items-center justify-center overflow-hidden rounded-2xl border-[3px] border-slate-900 bg-[#dff5e1]">
+    <div className="pixel-frame relative flex aspect-square w-full max-w-xs items-center justify-center overflow-hidden border-4 border-slate-900 bg-[#dff5e1]">
       <div className="pointer-events-none absolute inset-0 bg-[repeating-linear-gradient(0deg,rgba(0,0,0,0.04)_0px,rgba(0,0,0,0.04)_1px,transparent_1px,transparent_3px)]" />
       {errored ? (
         <div className="relative flex flex-col items-center gap-2 p-4 text-center text-slate-800">
@@ -45,6 +45,7 @@ export function CapybaraStage({
           src={src}
           alt={actionPlaying ? `Chonky ${actionPlaying}` : sad ? "Chonky is sad" : "Chonky is happy"}
           className="relative h-full w-full object-contain"
+          style={{ imageRendering: "pixelated" }}
           onError={() => setErrored(true)}
         />
       )}
