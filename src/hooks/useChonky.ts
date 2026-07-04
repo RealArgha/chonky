@@ -12,6 +12,8 @@ import {
 
 const STORAGE_KEY = "chonki-state-v1";
 const TICK_MS = 1000;
+// Meters barely move while an action gif is playing, so the moment feels calm.
+const ACTION_DECAY_SCALE = 0.1;
 
 type StoredState = {
   stats: Stats;
@@ -56,6 +58,11 @@ export function useChonky() {
   const [actionPlaying, setActionPlaying] = useState<ActionKey | null>(null);
   const lastUpdatedRef = useRef<number>(0);
   const animationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const actionPlayingRef = useRef<ActionKey | null>(null);
+
+  useEffect(() => {
+    actionPlayingRef.current = actionPlaying;
+  }, [actionPlaying]);
 
   // Tick the decay forward while the app is open.
   useEffect(() => {
@@ -64,7 +71,8 @@ export function useChonky() {
       const now = Date.now();
       const elapsedMs = now - lastUpdatedRef.current;
       lastUpdatedRef.current = now;
-      setStats((prev) => applyDecay(prev, elapsedMs));
+      const scale = actionPlayingRef.current ? ACTION_DECAY_SCALE : 1;
+      setStats((prev) => applyDecay(prev, elapsedMs * scale));
     }, TICK_MS);
     return () => clearInterval(interval);
   }, []);
