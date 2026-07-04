@@ -28,15 +28,15 @@ export function ActionButton({
       type="button"
       disabled={disabled}
       onClick={() => onPress(action)}
-      className="flex flex-col items-center gap-1.5 rounded-2xl border-[3px] border-slate-900 bg-white px-2 py-3 shadow-[0_3px_0_0_#0f172a] transition active:translate-y-[3px] active:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
+      className="flex w-20 flex-col items-center gap-2 rounded-2xl border-[3px] border-slate-900 bg-white px-2 py-4 shadow-[0_4px_0_0_#0f172a] transition active:translate-y-1 active:shadow-none disabled:cursor-not-allowed disabled:opacity-50 sm:w-28"
     >
       <span
-        className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-slate-900"
+        className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-slate-900 sm:h-16 sm:w-16"
         style={{ background: ACTION_BADGE_COLOR[action] }}
       >
-        <span className="text-base leading-none">{ACTION_EMOJI[action]}</span>
+        <span className="text-2xl leading-none sm:text-3xl">{ACTION_EMOJI[action]}</span>
       </span>
-      <span className="font-pixel text-[9px] uppercase tracking-wide text-slate-900">
+      <span className="font-pixel text-[10px] uppercase tracking-wide text-slate-900">
         {ACTION_LABELS[action]}
       </span>
     </button>
