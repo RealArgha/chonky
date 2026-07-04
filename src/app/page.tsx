@@ -42,7 +42,7 @@ export default function Home() {
             <ActionButton
               key={action}
               action={action}
-              disabled={actionPlaying !== null}
+              active={actionPlaying === action}
               onPress={performAction}
             />
           ))}

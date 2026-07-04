@@ -91,14 +91,13 @@ export function useChonky() {
   }, []);
 
   const performAction = useCallback((action: ActionKey) => {
-    setActionPlaying((current) => {
-      if (current) return current;
-      setStats((prev) => applyAction(prev, action));
-      animationTimeoutRef.current = setTimeout(() => {
-        setActionPlaying(null);
-      }, ACTION_ANIMATION_MS[action]);
-      return action;
-    });
+    // Pressing any action cancels whichever one is currently playing and takes over.
+    if (animationTimeoutRef.current) clearTimeout(animationTimeoutRef.current);
+    setStats((prev) => applyAction(prev, action));
+    setActionPlaying(action);
+    animationTimeoutRef.current = setTimeout(() => {
+      setActionPlaying(null);
+    }, ACTION_ANIMATION_MS[action]);
   }, []);
 
   return { stats, actionPlaying, performAction, ready };
