@@ -72,11 +72,6 @@ export function applyDecay(stats: Stats, elapsedMs: number): Stats {
   return next;
 }
 
-export function applyAction(stats: Stats, action: ActionKey): Stats {
-  const stat = ACTION_TO_STAT[action];
-  return { ...stats, [stat]: clampStat(stats[stat] + ACTION_BOOST) };
-}
-
 export function lowestStat(stats: Stats): { key: StatKey; value: number } {
   const entries = Object.entries(stats) as [StatKey, number][];
   return entries.reduce(

@@ -3,11 +3,14 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import {
   ACTION_ANIMATION_MS,
+  ACTION_BOOST,
+  ACTION_TO_STAT,
   ActionKey,
-  applyAction,
   applyDecay,
+  clampStat,
   INITIAL_STATS,
   Stats,
+  StatKey,
 } from "@/lib/chonky";
 
 const STORAGE_KEY = "chonki-state-v1";
@@ -19,6 +22,18 @@ type StoredState = {
   stats: Stats;
   lastUpdated: number;
 };
+
+type Refill = {
+  stat: StatKey;
+  from: number;
+  to: number;
+  startedAt: number;
+  durationMs: number;
+};
+
+function lerp(from: number, to: number, progress: number): number {
+  return from + (to - from) * Math.min(1, Math.max(0, progress));
+}
 
 function loadStoredState(): StoredState {
   if (typeof window === "undefined") {
@@ -59,12 +74,19 @@ export function useChonky() {
   const lastUpdatedRef = useRef<number>(0);
   const animationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const actionPlayingRef = useRef<ActionKey | null>(null);
+  const statsRef = useRef<Stats>(stats);
+  const refillRef = useRef<Refill | null>(null);
 
   useEffect(() => {
     actionPlayingRef.current = actionPlaying;
   }, [actionPlaying]);
 
-  // Tick the decay forward while the app is open.
+  useEffect(() => {
+    statsRef.current = stats;
+  }, [stats]);
+
+  // Tick the decay forward while the app is open, and interpolate a slow
+  // stat refill while an action is playing instead of jumping instantly.
   useEffect(() => {
     lastUpdatedRef.current = Date.now();
     const interval = setInterval(() => {
@@ -72,7 +94,13 @@ export function useChonky() {
       const elapsedMs = now - lastUpdatedRef.current;
       lastUpdatedRef.current = now;
       const scale = actionPlayingRef.current ? ACTION_DECAY_SCALE : 1;
-      setStats((prev) => applyDecay(prev, elapsedMs * scale));
+      setStats((prev) => {
+        const decayed = applyDecay(prev, elapsedMs * scale);
+        const refill = refillRef.current;
+        if (!refill) return decayed;
+        const progress = (now - refill.startedAt) / refill.durationMs;
+        return { ...decayed, [refill.stat]: lerp(refill.from, refill.to, progress) };
+      });
     }, TICK_MS);
     return () => clearInterval(interval);
   }, []);
@@ -91,13 +119,22 @@ export function useChonky() {
   }, []);
 
   const performAction = useCallback((action: ActionKey) => {
-    // Pressing any action cancels whichever one is currently playing and takes over.
-    if (animationTimeoutRef.current) clearTimeout(animationTimeoutRef.current);
-    setStats((prev) => applyAction(prev, action));
+    // Ignore taps while an action is already playing so mashing a button
+    // can't stack up repeated boosts.
+    if (actionPlayingRef.current) return;
+
+    const stat = ACTION_TO_STAT[action];
+    const durationMs = ACTION_ANIMATION_MS[action];
+    const from = statsRef.current[stat];
+    const to = clampStat(from + ACTION_BOOST);
+    refillRef.current = { stat, from, to, startedAt: Date.now(), durationMs };
     setActionPlaying(action);
     animationTimeoutRef.current = setTimeout(() => {
+      // Snap to the exact target in case the last tick landed slightly early.
+      setStats((prev) => ({ ...prev, [stat]: to }));
+      refillRef.current = null;
       setActionPlaying(null);
-    }, ACTION_ANIMATION_MS[action]);
+    }, durationMs);
   }, []);
 
   return { stats, actionPlaying, performAction, ready };
