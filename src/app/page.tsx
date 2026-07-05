@@ -2,6 +2,7 @@
 
 import { ActionButton } from "@/components/ActionButton";
 import { CapybaraStage } from "@/components/CapybaraStage";
+import { LetterButton } from "@/components/LetterButton";
 import { MeterBar } from "@/components/MeterBar";
 import { useChonky } from "@/hooks/useChonky";
 import { ActionKey, isSad, lowestStat, STAT_LABELS } from "@/lib/chonky";
@@ -18,9 +19,13 @@ export default function Home() {
 
   return (
     <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center px-4 py-8">
-      <h1 className="mb-4 text-center font-pixel text-2xl tracking-wide text-amber-800 [text-shadow:3px_3px_0_#ffffff]">
-        Chonky
-      </h1>
+      <div className="mb-4 flex items-center justify-between gap-2">
+        <div className="h-9 w-9 shrink-0" />
+        <h1 className="flex-1 text-center font-pixel text-2xl tracking-wide text-amber-800 [text-shadow:3px_3px_0_#ffffff]">
+          Chonky
+        </h1>
+        <LetterButton />
+      </div>
 
       <div className="flex flex-col gap-5 rounded-3xl border-[3px] border-slate-900 bg-slate-100 p-4 shadow-[0_6px_0_0_#0f172a]">
         {sad && (

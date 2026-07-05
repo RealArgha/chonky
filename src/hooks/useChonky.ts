@@ -127,9 +127,10 @@ export function useChonky() {
   }, []);
 
   const performAction = useCallback((action: ActionKey) => {
-    // Pressing any action cancels whichever one is currently playing and
-    // takes over, but every stat still ramps in gradually rather than
-    // jumping instantly, so mashing a button can't cheese free boosts.
+    // Re-pressing the action that's already playing is a no-op: it lets the
+    // animation run all the way to a full fill instead of restarting its
+    // ramp. Pressing a *different* action still cancels and takes over.
+    if (actionPlayingRef.current === action) return;
     if (animationTimeoutRef.current) clearTimeout(animationTimeoutRef.current);
 
     const now = Date.now();
