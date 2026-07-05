@@ -12,6 +12,10 @@ const BIRDS = [
 const TREES: { bottom: string; left?: string; right?: string; scale: number }[] = [
   { bottom: "9%", left: "3%", scale: 1.2 },
   { bottom: "7%", right: "4%", scale: 1 },
+  { bottom: "10%", left: "14%", scale: 0.8 },
+  { bottom: "8%", right: "16%", scale: 0.9 },
+  { bottom: "11%", left: "24%", scale: 0.6 },
+  { bottom: "9%", right: "26%", scale: 0.7 },
 ];
 
 function Cloud({ scale }: { scale: number }) {

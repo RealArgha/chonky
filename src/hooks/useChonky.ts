@@ -3,8 +3,7 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import {
   ACTION_ANIMATION_MS,
-  ACTION_BOOST,
-  ACTION_TO_STAT,
+  ACTION_TARGETS,
   ActionKey,
   applyDecay,
   clampStat,
@@ -33,6 +32,10 @@ type Refill = {
 
 function lerp(from: number, to: number, progress: number): number {
   return from + (to - from) * Math.min(1, Math.max(0, progress));
+}
+
+function liveRefillValue(refill: Refill, now: number): number {
+  return lerp(refill.from, refill.to, (now - refill.startedAt) / refill.durationMs);
 }
 
 function loadStoredState(): StoredState {
@@ -75,7 +78,9 @@ export function useChonky() {
   const animationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const actionPlayingRef = useRef<ActionKey | null>(null);
   const statsRef = useRef<Stats>(stats);
-  const refillRef = useRef<Refill | null>(null);
+  // One entry per stat an action is currently moving. Most actions move a
+  // single stat, but play moves three (fun up, energy/hygiene down) at once.
+  const activeRefillsRef = useRef<Refill[]>([]);
 
   useEffect(() => {
     actionPlayingRef.current = actionPlaying;
@@ -85,8 +90,8 @@ export function useChonky() {
     statsRef.current = stats;
   }, [stats]);
 
-  // Tick the decay forward while the app is open, and interpolate a slow
-  // stat refill while an action is playing instead of jumping instantly.
+  // Tick the decay forward while the app is open, and interpolate any active
+  // refills instead of jumping their stats instantly.
   useEffect(() => {
     lastUpdatedRef.current = Date.now();
     const interval = setInterval(() => {
@@ -96,10 +101,13 @@ export function useChonky() {
       const scale = actionPlayingRef.current ? ACTION_DECAY_SCALE : 1;
       setStats((prev) => {
         const decayed = applyDecay(prev, elapsedMs * scale);
-        const refill = refillRef.current;
-        if (!refill) return decayed;
-        const progress = (now - refill.startedAt) / refill.durationMs;
-        return { ...decayed, [refill.stat]: lerp(refill.from, refill.to, progress) };
+        const refills = activeRefillsRef.current;
+        if (refills.length === 0) return decayed;
+        const next = { ...decayed };
+        for (const refill of refills) {
+          next[refill.stat] = liveRefillValue(refill, now);
+        }
+        return next;
       });
     }, TICK_MS);
     return () => clearInterval(interval);
@@ -120,34 +128,45 @@ export function useChonky() {
 
   const performAction = useCallback((action: ActionKey) => {
     // Pressing any action cancels whichever one is currently playing and
-    // takes over, but the boost still ramps in gradually rather than
-    // jumping instantly, so mashing the same button can't cheese free boosts.
+    // takes over, but every stat still ramps in gradually rather than
+    // jumping instantly, so mashing a button can't cheese free boosts.
     if (animationTimeoutRef.current) clearTimeout(animationTimeoutRef.current);
 
     const now = Date.now();
-    const stat = ACTION_TO_STAT[action];
     const durationMs = ACTION_ANIMATION_MS[action];
-    const prevRefill = refillRef.current;
-    const prevProgress = prevRefill ? (now - prevRefill.startedAt) / prevRefill.durationMs : 0;
+    const targets = ACTION_TARGETS[action];
+    const targetStats = new Set(targets.map((t) => t.stat));
+    const prevRefills = activeRefillsRef.current;
 
-    const from = prevRefill && prevRefill.stat === stat
-      ? lerp(prevRefill.from, prevRefill.to, prevProgress)
-      : statsRef.current[stat];
-    const to = clampStat(from + ACTION_BOOST);
-    refillRef.current = { stat, from, to, startedAt: now, durationMs };
+    const nextRefills: Refill[] = targets.map(({ stat, delta }) => {
+      const prevRefill = prevRefills.find((r) => r.stat === stat);
+      const from = prevRefill ? liveRefillValue(prevRefill, now) : statsRef.current[stat];
+      return { stat, from, to: clampStat(from + delta), startedAt: now, durationMs };
+    });
 
-    if (prevRefill && prevRefill.stat !== stat) {
-      // Freeze whatever the interrupted action had refilled so far instead
-      // of letting it keep animating in the background or snapping back.
-      const settled = lerp(prevRefill.from, prevRefill.to, prevProgress);
-      setStats((prev) => ({ ...prev, [prevRefill.stat]: settled }));
+    // Freeze whatever the interrupted action was moving that the new action
+    // doesn't also touch, instead of letting it keep animating in the
+    // background or snapping back.
+    const settledUpdates = prevRefills
+      .filter((r) => !targetStats.has(r.stat))
+      .reduce<Partial<Stats>>((acc, r) => {
+        acc[r.stat] = liveRefillValue(r, now);
+        return acc;
+      }, {});
+    if (Object.keys(settledUpdates).length > 0) {
+      setStats((prev) => ({ ...prev, ...settledUpdates }));
     }
 
+    activeRefillsRef.current = nextRefills;
     setActionPlaying(action);
     animationTimeoutRef.current = setTimeout(() => {
-      // Snap to the exact target in case the last tick landed slightly early.
-      setStats((prev) => ({ ...prev, [stat]: to }));
-      refillRef.current = null;
+      // Snap to the exact targets in case the last tick landed slightly early.
+      setStats((prev) => {
+        const done = { ...prev };
+        for (const refill of nextRefills) done[refill.stat] = refill.to;
+        return done;
+      });
+      activeRefillsRef.current = [];
       setActionPlaying(null);
     }, durationMs);
   }, []);

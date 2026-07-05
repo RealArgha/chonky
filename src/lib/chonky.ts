@@ -11,13 +11,6 @@ export const STAT_LABELS: Record<StatKey, string> = {
   fun: "Fun",
 };
 
-export const ACTION_TO_STAT: Record<ActionKey, StatKey> = {
-  eat: "hunger",
-  sleep: "energy",
-  bath: "hygiene",
-  play: "fun",
-};
-
 export const ACTION_LABELS: Record<ActionKey, string> = {
   eat: "Feed",
   sleep: "Sleep",
@@ -42,11 +35,29 @@ export const DECAY_PER_MINUTE: Record<StatKey, number> = {
 
 // How much an action refills its stat, and how long its gif plays.
 export const ACTION_BOOST = 40;
+// Playing tires Chonky out and gets it dirty, so a play session costs
+// some energy and hygiene alongside the fun it adds.
+export const PLAY_DRAIN = 15;
 export const ACTION_ANIMATION_MS: Record<ActionKey, number> = {
   eat: 10_000,
   sleep: 120_000,
   bath: 10_000,
   play: 10_000,
+};
+
+export type ActionTarget = { stat: StatKey; delta: number };
+
+// The stat(s) each action moves and by how much. Play is the only action
+// that touches more than one stat: it boosts fun but costs energy/hygiene.
+export const ACTION_TARGETS: Record<ActionKey, ActionTarget[]> = {
+  eat: [{ stat: "hunger", delta: ACTION_BOOST }],
+  sleep: [{ stat: "energy", delta: ACTION_BOOST }],
+  bath: [{ stat: "hygiene", delta: ACTION_BOOST }],
+  play: [
+    { stat: "fun", delta: ACTION_BOOST },
+    { stat: "energy", delta: -PLAY_DRAIN },
+    { stat: "hygiene", delta: -PLAY_DRAIN },
+  ],
 };
 
 export const SAD_THRESHOLD = 20;
