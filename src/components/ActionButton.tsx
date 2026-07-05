@@ -11,21 +11,18 @@ const ACTION_BADGE_COLOR: Record<ActionKey, string> = {
 export function ActionButton({
   action,
   active,
-  disabled,
   onPress,
 }: {
   action: ActionKey;
   active: boolean;
-  disabled: boolean;
   onPress: (action: ActionKey) => void;
 }) {
   const Icon = ACTION_ICONS[action];
   return (
     <button
       type="button"
-      disabled={disabled}
       onClick={() => onPress(action)}
-      className={`flex flex-col items-center gap-1.5 rounded-2xl border-[3px] border-slate-900 bg-white px-2 py-3 shadow-[0_3px_0_0_#0f172a] transition active:translate-y-[3px] active:shadow-none disabled:cursor-not-allowed disabled:opacity-50 disabled:active:translate-y-0 disabled:active:shadow-[0_3px_0_0_#0f172a] ${
+      className={`flex flex-col items-center gap-1.5 rounded-2xl border-[3px] border-slate-900 bg-white px-2 py-3 shadow-[0_3px_0_0_#0f172a] transition active:translate-y-[3px] active:shadow-none ${
         active ? "-translate-y-0.5 ring-4 ring-amber-300" : ""
       }`}
     >

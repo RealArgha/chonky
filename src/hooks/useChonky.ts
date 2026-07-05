@@ -119,15 +119,30 @@ export function useChonky() {
   }, []);
 
   const performAction = useCallback((action: ActionKey) => {
-    // Ignore taps while an action is already playing so mashing a button
-    // can't stack up repeated boosts.
-    if (actionPlayingRef.current) return;
+    // Pressing any action cancels whichever one is currently playing and
+    // takes over, but the boost still ramps in gradually rather than
+    // jumping instantly, so mashing the same button can't cheese free boosts.
+    if (animationTimeoutRef.current) clearTimeout(animationTimeoutRef.current);
 
+    const now = Date.now();
     const stat = ACTION_TO_STAT[action];
     const durationMs = ACTION_ANIMATION_MS[action];
-    const from = statsRef.current[stat];
+    const prevRefill = refillRef.current;
+    const prevProgress = prevRefill ? (now - prevRefill.startedAt) / prevRefill.durationMs : 0;
+
+    const from = prevRefill && prevRefill.stat === stat
+      ? lerp(prevRefill.from, prevRefill.to, prevProgress)
+      : statsRef.current[stat];
     const to = clampStat(from + ACTION_BOOST);
-    refillRef.current = { stat, from, to, startedAt: Date.now(), durationMs };
+    refillRef.current = { stat, from, to, startedAt: now, durationMs };
+
+    if (prevRefill && prevRefill.stat !== stat) {
+      // Freeze whatever the interrupted action had refilled so far instead
+      // of letting it keep animating in the background or snapping back.
+      const settled = lerp(prevRefill.from, prevRefill.to, prevProgress);
+      setStats((prev) => ({ ...prev, [prevRefill.stat]: settled }));
+    }
+
     setActionPlaying(action);
     animationTimeoutRef.current = setTimeout(() => {
       // Snap to the exact target in case the last tick landed slightly early.
