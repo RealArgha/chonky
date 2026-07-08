@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 const NAME_KEY = "chonky-chat-name";
-const NAMES = ["Argha", "Ponnu"] as const;
+const NAMES = ["Dad", "Mom"] as const;
 const POLL_MS = 3000;
 
 type ChatMessage = {
