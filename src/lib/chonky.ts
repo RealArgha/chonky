@@ -26,12 +26,13 @@ export const ACTION_VERB: Record<ActionKey, string> = {
   play: "played with Chonky",
 };
 
-// Minutes for a full (100) stat to decay to 0 if left untouched.
+// Minutes for a full (100) stat to decay to 0 if left untouched. Energy
+// (the sleep bar) empties every 4 hours; everything else empties every 2.
 const MINUTES_TO_EMPTY: Record<StatKey, number> = {
-  hunger: 180,
-  energy: 300,
-  hygiene: 360,
-  fun: 240,
+  hunger: 120,
+  energy: 240,
+  hygiene: 120,
+  fun: 120,
 };
 
 export const DECAY_PER_MINUTE: Record<StatKey, number> = {
@@ -41,30 +42,39 @@ export const DECAY_PER_MINUTE: Record<StatKey, number> = {
   fun: 100 / MINUTES_TO_EMPTY.fun,
 };
 
-// How much an action refills its stat, and how long its gif plays.
-export const ACTION_BOOST = 40;
-// Playing tires Chonky out and gets it dirty, so a play session costs
-// some energy and hygiene alongside the fun it adds.
-export const PLAY_DRAIN = 15;
+// Every action fills its main stat all the way to 100 (a delta this big
+// always clamps to full, whatever the stat's starting value). Secondary
+// stats an action touches only move "a little bit" by comparison.
+export const FULL_BOOST = 100;
+export const SMALL_ADJUST = 10;
+
+// Sleep takes an hour to fully refill; every other action takes a minute.
 export const ACTION_ANIMATION_MS: Record<ActionKey, number> = {
-  eat: 10_000,
-  sleep: 120_000,
-  bath: 10_000,
-  play: 10_000,
+  eat: 60_000,
+  sleep: 3_600_000,
+  bath: 60_000,
+  play: 60_000,
 };
 
 export type ActionTarget = { stat: StatKey; delta: number };
 
-// The stat(s) each action moves and by how much. Play is the only action
-// that touches more than one stat: it boosts fun but costs energy/hygiene.
+// The stat(s) each action moves and by how much. Eating and bathing also
+// nudge energy up a little, and playing tires Chonky out and gets it dirty,
+// so it costs a little energy/hygiene alongside the fun it adds in full.
 export const ACTION_TARGETS: Record<ActionKey, ActionTarget[]> = {
-  eat: [{ stat: "hunger", delta: ACTION_BOOST }],
-  sleep: [{ stat: "energy", delta: ACTION_BOOST }],
-  bath: [{ stat: "hygiene", delta: ACTION_BOOST }],
+  eat: [
+    { stat: "hunger", delta: FULL_BOOST },
+    { stat: "energy", delta: SMALL_ADJUST },
+  ],
+  sleep: [{ stat: "energy", delta: FULL_BOOST }],
+  bath: [
+    { stat: "hygiene", delta: FULL_BOOST },
+    { stat: "energy", delta: SMALL_ADJUST },
+  ],
   play: [
-    { stat: "fun", delta: ACTION_BOOST },
-    { stat: "energy", delta: -PLAY_DRAIN },
-    { stat: "hygiene", delta: -PLAY_DRAIN },
+    { stat: "fun", delta: FULL_BOOST },
+    { stat: "energy", delta: -SMALL_ADJUST },
+    { stat: "hygiene", delta: -SMALL_ADJUST },
   ],
 };
 
