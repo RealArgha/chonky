@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { CHAT_NAMES } from "@/lib/chat";
 
 const NAME_KEY = "chonky-chat-name";
+const LAST_SEEN_KEY = "chonky-chat-last-seen";
 const POLL_MS = 3000;
 
 function urlBase64ToUint8Array(base64String: string) {
@@ -74,10 +75,13 @@ export function ChatButton() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
+  const [hasUnread, setHasUnread] = useState(false);
   const listRef = useRef<HTMLDivElement | null>(null);
+  const lastSeenRef = useRef<number>(0);
 
   useEffect(() => {
     setName(localStorage.getItem(NAME_KEY));
+    lastSeenRef.current = Number(localStorage.getItem(LAST_SEEN_KEY) ?? 0);
   }, []);
 
   useEffect(() => {
@@ -85,15 +89,30 @@ export function ChatButton() {
     subscribeToPush(name);
   }, [open, name]);
 
+  // Poll for messages whether the chat is open or not, so the button can
+  // badge an unread message even while the modal is closed.
   useEffect(() => {
-    if (!open) return;
     let cancelled = false;
 
     const load = async () => {
       try {
         const res = await fetch("/api/chat");
         const data: { messages?: ChatMessage[] } = await res.json();
-        if (!cancelled) setMessages(data.messages ?? []);
+        const list = data.messages ?? [];
+        if (cancelled) return;
+
+        const latest = list[list.length - 1];
+
+        if (open) {
+          setMessages(list);
+          setHasUnread(false);
+          if (latest) {
+            lastSeenRef.current = latest.ts;
+            localStorage.setItem(LAST_SEEN_KEY, String(latest.ts));
+          }
+        } else if (latest && name && latest.name !== name && latest.ts > lastSeenRef.current) {
+          setHasUnread(true);
+        }
       } catch {
         // ignore transient poll failures
       }
@@ -105,7 +124,7 @@ export function ChatButton() {
       cancelled = true;
       clearInterval(id);
     };
-  }, [open]);
+  }, [open, name]);
 
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight });
@@ -140,10 +159,16 @@ export function ChatButton() {
       <button
         type="button"
         aria-label="Open chat"
-        onClick={() => setOpen(true)}
-        className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-slate-900 bg-white shadow-[0_2px_0_0_#0f172a] transition active:translate-y-[2px] active:shadow-none"
+        onClick={() => {
+          setHasUnread(false);
+          setOpen(true);
+        }}
+        className="relative flex h-9 w-9 items-center justify-center rounded-full border-2 border-slate-900 bg-white shadow-[0_2px_0_0_#0f172a] transition active:translate-y-[2px] active:shadow-none"
       >
         <ChatBubbleIcon />
+        {hasUnread && (
+          <span className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-white bg-rose-500" />
+        )}
       </button>
 
       {open && (

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ACTION_TARGETS, ActionKey } from "@/lib/chonky";
+import { checkLowStats } from "@/lib/petNotify";
 import { applyAction, DEFAULT_PET_STATE, PET_KEY, PetState, resolvePetState } from "@/lib/petState";
 import { redis } from "@/lib/redis";
 
@@ -25,6 +26,8 @@ export async function POST(req: NextRequest) {
   if (next !== live) {
     await redis.set(PET_KEY, next);
   }
+
+  await checkLowStats(next.stats).catch(() => {});
 
   return NextResponse.json(next);
 }

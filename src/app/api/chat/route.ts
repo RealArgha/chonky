@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
 
   const recipient = otherChatName(name);
   if (recipient) {
-    notify(recipient, { title: name, body: text }).catch(() => {});
+    notify(recipient, { title: "New message", body: `${name}: ${text}` }).catch(() => {});
   }
 
   return NextResponse.json({ ok: true });
