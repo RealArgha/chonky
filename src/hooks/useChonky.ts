@@ -7,6 +7,7 @@ import {
   ActionKey,
   applyDecay,
   clampStat,
+  DECAY_PER_MINUTE,
   INITIAL_STATS,
   Stats,
   StatKey,
@@ -17,17 +18,25 @@ const TICK_MS = 1000;
 // Meters barely move while an action gif is playing, so the moment feels calm.
 const ACTION_DECAY_SCALE = 0.1;
 
-type StoredState = {
-  stats: Stats;
-  lastUpdated: number;
-};
-
 type Refill = {
   stat: StatKey;
   from: number;
   to: number;
   startedAt: number;
   durationMs: number;
+};
+
+type StoredState = {
+  stats: Stats;
+  lastUpdated: number;
+  action: ActionKey | null;
+  refills: Refill[];
+};
+
+type InitialState = {
+  stats: Stats;
+  action: ActionKey | null;
+  refills: Refill[];
 };
 
 function lerp(from: number, to: number, progress: number): number {
@@ -38,28 +47,67 @@ function liveRefillValue(refill: Refill, now: number): number {
   return lerp(refill.from, refill.to, (now - refill.startedAt) / refill.durationMs);
 }
 
+const DEFAULT_STORED_STATE: StoredState = {
+  stats: INITIAL_STATS,
+  lastUpdated: Date.now(),
+  action: null,
+  refills: [],
+};
+
 function loadStoredState(): StoredState {
-  if (typeof window === "undefined") {
-    return { stats: INITIAL_STATS, lastUpdated: Date.now() };
-  }
+  if (typeof window === "undefined") return DEFAULT_STORED_STATE;
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { stats: INITIAL_STATS, lastUpdated: Date.now() };
-    const parsed = JSON.parse(raw) as StoredState;
-    if (!parsed.stats || typeof parsed.lastUpdated !== "number") {
-      return { stats: INITIAL_STATS, lastUpdated: Date.now() };
-    }
-    return parsed;
+    if (!raw) return DEFAULT_STORED_STATE;
+    const parsed = JSON.parse(raw) as Partial<StoredState>;
+    if (!parsed.stats || typeof parsed.lastUpdated !== "number") return DEFAULT_STORED_STATE;
+    return {
+      stats: parsed.stats,
+      lastUpdated: parsed.lastUpdated,
+      action: parsed.action ?? null,
+      refills: parsed.refills ?? [],
+    };
   } catch {
-    return { stats: INITIAL_STATS, lastUpdated: Date.now() };
+    return DEFAULT_STORED_STATE;
   }
 }
 
-// Catch up on decay that happened while the app was closed, computed once at mount.
-function initialStats(): Stats {
+// Catch up on whatever happened while the app was closed, computed once at
+// mount: plain decay for untouched stats, but a stat mid-action (e.g. asleep)
+// either keeps filling toward its target or, if enough real time has already
+// passed, is resolved to full and decays normally from there.
+function resolveInitialState(): InitialState {
   const stored = loadStoredState();
-  const elapsedMs = Date.now() - stored.lastUpdated;
-  return applyDecay(stored.stats, elapsedMs);
+  const now = Date.now();
+
+  if (stored.refills.length === 0) {
+    return { stats: applyDecay(stored.stats, now - stored.lastUpdated), action: null, refills: [] };
+  }
+
+  const { refills } = stored;
+  const targetStats = new Set(refills.map((r) => r.stat));
+  const finishAt = refills[0].startedAt + refills[0].durationMs;
+
+  if (now >= finishAt) {
+    // The action finished while we were away; snap to its target and let
+    // normal decay pick up from the moment it finished.
+    const settled = { ...stored.stats };
+    for (const r of refills) settled[r.stat] = clampStat(r.to);
+    return { stats: applyDecay(settled, now - finishAt), action: null, refills: [] };
+  }
+
+  // Still mid-action: keep interpolating from the original startedAt (so it
+  // resolves at the correct real-world time). Other stats were dampened to
+  // ACTION_DECAY_SCALE the whole time too, same as the live tick loop.
+  const elapsedMinutes = ((now - stored.lastUpdated) * ACTION_DECAY_SCALE) / 60_000;
+  const next = { ...stored.stats };
+  for (const key of Object.keys(next) as StatKey[]) {
+    if (targetStats.has(key)) continue;
+    next[key] = clampStat(next[key] - DECAY_PER_MINUTE[key] * elapsedMinutes);
+  }
+  for (const r of refills) next[r.stat] = liveRefillValue(r, now);
+
+  return { stats: next, action: stored.action, refills };
 }
 
 const noopSubscribe = () => () => {};
@@ -72,15 +120,16 @@ function useHasMounted(): boolean {
 
 export function useChonky() {
   const ready = useHasMounted();
-  const [stats, setStats] = useState<Stats>(initialStats);
-  const [actionPlaying, setActionPlaying] = useState<ActionKey | null>(null);
+  const [initial] = useState(resolveInitialState);
+  const [stats, setStats] = useState<Stats>(initial.stats);
+  const [actionPlaying, setActionPlaying] = useState<ActionKey | null>(initial.action);
   const lastUpdatedRef = useRef<number>(0);
   const animationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const actionPlayingRef = useRef<ActionKey | null>(null);
+  const actionPlayingRef = useRef<ActionKey | null>(initial.action);
   const statsRef = useRef<Stats>(stats);
   // One entry per stat an action is currently moving. Most actions move a
   // single stat, but play moves three (fun up, energy/hygiene down) at once.
-  const activeRefillsRef = useRef<Refill[]>([]);
+  const activeRefillsRef = useRef<Refill[]>(initial.refills);
 
   useEffect(() => {
     actionPlayingRef.current = actionPlaying;
@@ -113,12 +162,38 @@ export function useChonky() {
     return () => clearInterval(interval);
   }, []);
 
-  // Persist on every change.
+  // Persist on every change, including whatever action is still mid-flight,
+  // so a closed/reopened app can resume the fill instead of losing it.
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const toStore: StoredState = { stats, lastUpdated: lastUpdatedRef.current || Date.now() };
+    const toStore: StoredState = {
+      stats,
+      lastUpdated: lastUpdatedRef.current || Date.now(),
+      action: actionPlayingRef.current,
+      refills: activeRefillsRef.current,
+    };
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(toStore));
   }, [stats]);
+
+  const finishRefills = useCallback((refills: Refill[]) => {
+    setStats((prev) => {
+      const done = { ...prev };
+      for (const refill of refills) done[refill.stat] = refill.to;
+      return done;
+    });
+    activeRefillsRef.current = [];
+    setActionPlaying(null);
+  }, []);
+
+  // If an action was still mid-flight when the app closed, re-arm its
+  // completion timer for whatever time is left, so it finishes on schedule.
+  useEffect(() => {
+    const refills = activeRefillsRef.current;
+    if (refills.length === 0) return;
+    const remaining = refills[0].startedAt + refills[0].durationMs - Date.now();
+    if (remaining <= 0) return;
+    animationTimeoutRef.current = setTimeout(() => finishRefills(refills), remaining);
+  }, [finishRefills]);
 
   useEffect(() => {
     return () => {
@@ -160,17 +235,8 @@ export function useChonky() {
 
     activeRefillsRef.current = nextRefills;
     setActionPlaying(action);
-    animationTimeoutRef.current = setTimeout(() => {
-      // Snap to the exact targets in case the last tick landed slightly early.
-      setStats((prev) => {
-        const done = { ...prev };
-        for (const refill of nextRefills) done[refill.stat] = refill.to;
-        return done;
-      });
-      activeRefillsRef.current = [];
-      setActionPlaying(null);
-    }, durationMs);
-  }, []);
+    animationTimeoutRef.current = setTimeout(() => finishRefills(nextRefills), durationMs);
+  }, [finishRefills]);
 
   return { stats, actionPlaying, performAction, ready };
 }
