@@ -31,6 +31,21 @@ body {
   animation: heart-float 900ms ease-out forwards;
 }
 
+@keyframes toast-in {
+  from {
+    transform: translateY(-12px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.toast-in {
+  animation: toast-in 200ms ease-out;
+}
+
 body::after {
   content: "";
   position: fixed;

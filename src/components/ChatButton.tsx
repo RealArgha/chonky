@@ -77,8 +77,11 @@ export function ChatButton() {
   const [sending, setSending] = useState(false);
   const [hasUnread, setHasUnread] = useState(false);
   const [bursts, setBursts] = useState<number[]>([]);
+  const [toast, setToast] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
   const lastSeenRef = useRef<number>(0);
+  const toastedRef = useRef<number>(0);
+  const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     setName(localStorage.getItem(NAME_KEY));
@@ -113,6 +116,16 @@ export function ChatButton() {
           }
         } else if (latest && name && latest.name !== name && latest.ts > lastSeenRef.current) {
           setHasUnread(true);
+
+          // Only pop the toast once per distinct new message, not on every poll.
+          if (latest.ts > toastedRef.current) {
+            toastedRef.current = latest.ts;
+            const message =
+              latest.text === "Miss you! 💕" ? `${latest.name} misses you! 💕` : `${latest.name}: ${latest.text}`;
+            setToast(message);
+            if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+            toastTimeoutRef.current = setTimeout(() => setToast(null), 4000);
+          }
         }
       } catch {
         // ignore transient poll failures
@@ -130,6 +143,12 @@ export function ChatButton() {
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight });
   }, [messages]);
+
+  useEffect(() => {
+    return () => {
+      if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+    };
+  }, []);
 
   const pickName = (n: string) => {
     localStorage.setItem(NAME_KEY, n);
@@ -168,6 +187,14 @@ export function ChatButton() {
 
   return (
     <>
+      {toast && (
+        <div className="pointer-events-none fixed inset-x-0 top-3 z-[60] flex justify-center px-4">
+          <div className="toast-in pointer-events-auto max-w-[90%] rounded-xl border-2 border-slate-900 bg-white px-3 py-2 text-center font-pixel text-[10px] text-slate-900 shadow-[0_3px_0_0_#0f172a]">
+            {toast}
+          </div>
+        </div>
+      )}
+
       <button
         type="button"
         aria-label="Open chat"
