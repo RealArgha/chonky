@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { ACTION_VERB, ActionKey } from "@/lib/chonky";
 
+const POLL_MS = 3000;
+
 type LogEntry = {
   name: string;
   action: ActionKey;
@@ -42,13 +44,27 @@ export function LogButton() {
 
   useEffect(() => {
     if (!open) return;
-    fetch("/api/pet/log")
-      .then((res) => res.json())
-      .then((data: { entries?: LogEntry[] }) => {
-        setEntries([...(data.entries ?? [])].reverse());
-        setFailed(false);
-      })
-      .catch(() => setFailed(true));
+    let cancelled = false;
+
+    const load = () => {
+      fetch("/api/pet/log")
+        .then((res) => res.json())
+        .then((data: { entries?: LogEntry[] }) => {
+          if (cancelled) return;
+          setEntries([...(data.entries ?? [])].reverse());
+          setFailed(false);
+        })
+        .catch(() => {
+          if (!cancelled) setFailed(true);
+        });
+    };
+
+    load();
+    const id = setInterval(load, POLL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
   }, [open]);
 
   return (
