@@ -76,6 +76,7 @@ export function ChatButton() {
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [hasUnread, setHasUnread] = useState(false);
+  const [bursts, setBursts] = useState<number[]>([]);
   const listRef = useRef<HTMLDivElement | null>(null);
   const lastSeenRef = useRef<number>(0);
 
@@ -160,6 +161,8 @@ export function ChatButton() {
     if (typeof navigator !== "undefined" && "vibrate" in navigator) {
       navigator.vibrate([80, 40, 80]);
     }
+    // A little heart-burst stands in for haptics on devices that can't vibrate.
+    setBursts((b) => [...b, Date.now()]);
     send("Miss you! 💕", { ping: true });
   };
 
@@ -247,9 +250,19 @@ export function ChatButton() {
                   type="button"
                   onClick={sendMissYou}
                   disabled={sending}
-                  className="flex items-center justify-center gap-1 rounded-lg border-2 border-slate-900 bg-rose-200 px-2 py-1 font-pixel text-[10px] text-slate-900 shadow-[0_2px_0_0_#0f172a] transition active:translate-y-[2px] active:shadow-none disabled:opacity-50"
+                  className="relative flex items-center justify-center gap-1 rounded-lg border-2 border-slate-900 bg-rose-200 px-2 py-1 font-pixel text-[10px] text-slate-900 shadow-[0_2px_0_0_#0f172a] transition active:translate-y-[2px] active:shadow-none disabled:opacity-50"
                 >
                   💕 Miss You
+                  {bursts.map((id, i) => (
+                    <span
+                      key={id}
+                      className="heart-float pointer-events-none absolute left-1/2 top-0 text-sm"
+                      style={{ animationDelay: `${(i % 3) * 100}ms` }}
+                      onAnimationEnd={() => setBursts((b) => b.filter((x) => x !== id))}
+                    >
+                      💕
+                    </span>
+                  ))}
                 </button>
 
                 <div className="flex gap-2">
