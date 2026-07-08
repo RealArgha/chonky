@@ -154,7 +154,14 @@ export function ChatButton() {
     }
   };
 
-  const sendMissYou = () => send("Miss you! 💕", { ping: true });
+  const sendMissYou = () => {
+    // Best-effort: iOS Safari (including installed PWAs) doesn't support the
+    // Vibration API at all, so this is a no-op there but works on Android.
+    if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+      navigator.vibrate([80, 40, 80]);
+    }
+    send("Miss you! 💕", { ping: true });
+  };
 
   return (
     <>
