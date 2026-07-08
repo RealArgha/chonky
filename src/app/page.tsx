@@ -3,6 +3,7 @@
 import { ActionButton } from "@/components/ActionButton";
 import { CapybaraStage } from "@/components/CapybaraStage";
 import { ChatButton } from "@/components/ChatButton";
+import { DaysTogether } from "@/components/DaysTogether";
 import { LetterButton } from "@/components/LetterButton";
 import { LogButton } from "@/components/LogButton";
 import { MeterBar } from "@/components/MeterBar";
@@ -21,16 +22,19 @@ export default function Home() {
 
   return (
     <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center px-4 py-8">
-      <div className="mb-4 flex items-center justify-between gap-2">
-        <div className="flex-1" />
-        <h1 className="flex-1 text-center font-pixel text-2xl tracking-wide text-amber-800 [text-shadow:3px_3px_0_#ffffff]">
-          Chonky
-        </h1>
-        <div className="flex flex-1 justify-end gap-2">
-          <LogButton />
-          <ChatButton />
-          <LetterButton />
+      <div className="mb-4 flex flex-col gap-1">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex-1" />
+          <h1 className="flex-1 text-center font-pixel text-2xl tracking-wide text-amber-800 [text-shadow:3px_3px_0_#ffffff]">
+            Chonky
+          </h1>
+          <div className="flex flex-1 justify-end gap-2">
+            <LogButton />
+            <ChatButton />
+            <LetterButton />
+          </div>
         </div>
+        <DaysTogether />
       </div>
 
       <div className="flex flex-col gap-5 rounded-3xl border-[3px] border-slate-900 bg-slate-100 p-4 shadow-[0_6px_0_0_#0f172a]">

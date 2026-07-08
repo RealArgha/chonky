@@ -135,11 +135,11 @@ export function ChatButton() {
     setName(n);
   };
 
-  const send = async () => {
-    const text = draft.trim();
+  const send = async (overrideText?: string) => {
+    const text = (overrideText ?? draft).trim();
     if (!text || !name || sending) return;
     setSending(true);
-    setDraft("");
+    if (!overrideText) setDraft("");
     try {
       await fetch("/api/chat", {
         method: "POST",
@@ -153,6 +153,8 @@ export function ChatButton() {
       setSending(false);
     }
   };
+
+  const sendMissYou = () => send("Miss you! 💕");
 
   return (
     <>
@@ -234,6 +236,15 @@ export function ChatButton() {
                   })}
                 </div>
 
+                <button
+                  type="button"
+                  onClick={sendMissYou}
+                  disabled={sending}
+                  className="flex items-center justify-center gap-1 rounded-lg border-2 border-slate-900 bg-rose-200 px-2 py-1 font-pixel text-[10px] text-slate-900 shadow-[0_2px_0_0_#0f172a] transition active:translate-y-[2px] active:shadow-none disabled:opacity-50"
+                >
+                  💕 Miss You
+                </button>
+
                 <div className="flex gap-2">
                   <input
                     value={draft}
@@ -246,7 +257,7 @@ export function ChatButton() {
                   />
                   <button
                     type="button"
-                    onClick={send}
+                    onClick={() => send()}
                     disabled={sending || !draft.trim()}
                     className="rounded-lg border-2 border-slate-900 bg-amber-200 px-3 py-1 font-pixel text-[10px] text-slate-900 shadow-[0_2px_0_0_#0f172a] transition active:translate-y-[2px] active:shadow-none disabled:opacity-50"
                   >
