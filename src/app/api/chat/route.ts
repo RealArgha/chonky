@@ -24,6 +24,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
   const name = typeof body?.name === "string" ? body.name.trim().slice(0, 30) : "";
   const text = typeof body?.text === "string" ? body.text.trim().slice(0, 1000) : "";
+  const isPing = Boolean(body?.ping);
 
   if (!name || !text) {
     return NextResponse.json({ error: "name and text are required" }, { status: 400 });
@@ -35,7 +36,10 @@ export async function POST(req: NextRequest) {
 
   const recipient = otherChatName(name);
   if (recipient) {
-    notify(recipient, { title: "New message", body: `${name}: ${text}` }).catch(() => {});
+    // A "miss you" ping keeps its content off the lock screen; the real
+    // message still shows once the chat itself is opened.
+    const pushBody = isPing ? `${name} sent you a ping 💌` : `${name}: ${text}`;
+    notify(recipient, { title: "New message", body: pushBody }).catch(() => {});
   }
 
   return NextResponse.json({ ok: true });

@@ -135,7 +135,7 @@ export function ChatButton() {
     setName(n);
   };
 
-  const send = async (overrideText?: string) => {
+  const send = async (overrideText?: string, options?: { ping?: boolean }) => {
     const text = (overrideText ?? draft).trim();
     if (!text || !name || sending) return;
     setSending(true);
@@ -144,7 +144,7 @@ export function ChatButton() {
       await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, text }),
+        body: JSON.stringify({ name, text, ping: options?.ping ?? false }),
       });
       const res = await fetch("/api/chat");
       const data: { messages?: ChatMessage[] } = await res.json();
@@ -154,7 +154,7 @@ export function ChatButton() {
     }
   };
 
-  const sendMissYou = () => send("Miss you! 💕");
+  const sendMissYou = () => send("Miss you! 💕", { ping: true });
 
   return (
     <>
