@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { otherChatName } from "@/lib/chat";
+import { notify } from "@/lib/push";
 import { redis } from "@/lib/redis";
 
 const CHAT_KEY = "chonky:chat:messages";
@@ -30,6 +32,11 @@ export async function POST(req: NextRequest) {
   const message: ChatMessage = { name, text, ts: Date.now() };
   await redis.rpush(CHAT_KEY, message);
   await redis.ltrim(CHAT_KEY, -MAX_MESSAGES, -1);
+
+  const recipient = otherChatName(name);
+  if (recipient) {
+    notify(recipient, { title: name, body: text }).catch(() => {});
+  }
 
   return NextResponse.json({ ok: true });
 }

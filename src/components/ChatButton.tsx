@@ -1,10 +1,48 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { CHAT_NAMES } from "@/lib/chat";
 
 const NAME_KEY = "chonky-chat-name";
-const NAMES = ["Dad", "Mom"] as const;
 const POLL_MS = 3000;
+
+function urlBase64ToUint8Array(base64String: string) {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = atob(base64);
+  const output = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; i++) output[i] = rawData.charCodeAt(i);
+  return output;
+}
+
+async function subscribeToPush(name: string) {
+  const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+  if (!vapidKey || !("serviceWorker" in navigator) || !("PushManager" in window)) return;
+
+  try {
+    const permission = await Notification.requestPermission();
+    if (permission !== "granted") return;
+
+    const registration = await navigator.serviceWorker.register("/sw.js");
+    await navigator.serviceWorker.ready;
+
+    let subscription = await registration.pushManager.getSubscription();
+    if (!subscription) {
+      subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(vapidKey),
+      });
+    }
+
+    await fetch("/api/push/subscribe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, subscription: subscription.toJSON() }),
+    });
+  } catch {
+    // push is best-effort; chat still works via polling if this fails
+  }
+}
 
 type ChatMessage = {
   name: string;
@@ -41,6 +79,11 @@ export function ChatButton() {
   useEffect(() => {
     setName(localStorage.getItem(NAME_KEY));
   }, []);
+
+  useEffect(() => {
+    if (!open || !name) return;
+    subscribeToPush(name);
+  }, [open, name]);
 
   useEffect(() => {
     if (!open) return;
@@ -128,7 +171,7 @@ export function ChatButton() {
               <div className="flex flex-1 flex-col items-center justify-center gap-4">
                 <p className="font-pixel text-[10px] text-slate-900">Who&apos;s chatting?</p>
                 <div className="flex gap-3">
-                  {NAMES.map((n) => (
+                  {CHAT_NAMES.map((n) => (
                     <button
                       key={n}
                       type="button"
