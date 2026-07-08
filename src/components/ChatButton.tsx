@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { CHAT_NAMES } from "@/lib/chat";
+import { CHAT_NAME_STORAGE_KEY, CHAT_NAMES } from "@/lib/chat";
 
-const NAME_KEY = "chonky-chat-name";
+const NAME_KEY = CHAT_NAME_STORAGE_KEY;
 const LAST_SEEN_KEY = "chonky-chat-last-seen";
 const POLL_MS = 3000;
 

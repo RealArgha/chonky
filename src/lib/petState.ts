@@ -26,6 +26,14 @@ export type PetState = {
 };
 
 export const PET_KEY = "chonky:pet:state";
+export const PET_LOG_KEY = "chonky:pet:log";
+export const MAX_LOG_ENTRIES = 100;
+
+export type LogEntry = {
+  name: string;
+  action: ActionKey;
+  ts: number;
+};
 
 export const DEFAULT_PET_STATE: PetState = {
   stats: INITIAL_STATS,

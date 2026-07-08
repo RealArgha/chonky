@@ -4,6 +4,7 @@ import { ActionButton } from "@/components/ActionButton";
 import { CapybaraStage } from "@/components/CapybaraStage";
 import { ChatButton } from "@/components/ChatButton";
 import { LetterButton } from "@/components/LetterButton";
+import { LogButton } from "@/components/LogButton";
 import { MeterBar } from "@/components/MeterBar";
 import { useChonky } from "@/hooks/useChonky";
 import { ActionKey, isSad, lowestStat, STAT_LABELS } from "@/lib/chonky";
@@ -26,6 +27,7 @@ export default function Home() {
           Chonky
         </h1>
         <div className="flex flex-1 justify-end gap-2">
+          <LogButton />
           <ChatButton />
           <LetterButton />
         </div>

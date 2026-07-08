@@ -10,6 +10,7 @@ import {
   INITIAL_STATS,
   Stats,
 } from "@/lib/chonky";
+import { CHAT_NAME_STORAGE_KEY } from "@/lib/chat";
 import { liveRefillValue, PetState, Refill } from "@/lib/petState";
 
 const TICK_MS = 1000;
@@ -157,10 +158,11 @@ export function useChonky() {
       }));
       applyServerState({ stats: statsRef.current, lastUpdated: now, action, refills: optimisticRefills });
 
+      const name = typeof window !== "undefined" ? localStorage.getItem(CHAT_NAME_STORAGE_KEY) : null;
       fetch("/api/pet/action", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action }),
+        body: JSON.stringify({ action, name }),
       })
         .then((res) => res.json())
         .then((state: PetState) => applyServerState(state))

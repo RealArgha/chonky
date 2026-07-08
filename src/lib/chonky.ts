@@ -18,6 +18,14 @@ export const ACTION_LABELS: Record<ActionKey, string> = {
   play: "Play",
 };
 
+// Used for phrasing activity-log entries, e.g. "Dad fed Chonky".
+export const ACTION_VERB: Record<ActionKey, string> = {
+  eat: "fed Chonky",
+  sleep: "put Chonky to sleep",
+  bath: "gave Chonky a bath",
+  play: "played with Chonky",
+};
+
 // Minutes for a full (100) stat to decay to 0 if left untouched.
 const MINUTES_TO_EMPTY: Record<StatKey, number> = {
   hunger: 180,

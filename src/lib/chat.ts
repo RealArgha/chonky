@@ -1,5 +1,6 @@
 export const CHAT_NAMES = ["Dad", "Mom"] as const;
 export type ChatName = (typeof CHAT_NAMES)[number];
+export const CHAT_NAME_STORAGE_KEY = "chonky-chat-name";
 
 export function otherChatName(name: string): ChatName | null {
   const other = CHAT_NAMES.find((n) => n !== name);
